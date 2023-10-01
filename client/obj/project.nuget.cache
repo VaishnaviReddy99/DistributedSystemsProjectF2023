@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "vqiytmZDAD1Tw0JbcSZQVpDSerIsuLAoS164j8kTATqXAu7LHStx+RO5WTYAvfgJMEB9KsdXeY174fNMka5t8g==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\msree\\MyFSharpApp\\client\\MyFSharpApp.fsproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\msree\\.nuget\\packages\\fsharp.core\\7.0.400\\fsharp.core.7.0.400.nupkg.sha512"
+  ],
+  "logs": []
+}
