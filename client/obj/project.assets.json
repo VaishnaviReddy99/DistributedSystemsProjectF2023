@@ -113,11 +113,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\msree\\MyFSharpApp\\client\\MyFSharpApp.fsproj",
+      "projectUniqueName": "C:\\Users\\msree\\DistributedSystemsProjectF2023\\client\\MyFSharpApp.fsproj",
       "projectName": "MyFSharpApp",
-      "projectPath": "C:\\Users\\msree\\MyFSharpApp\\client\\MyFSharpApp.fsproj",
+      "projectPath": "C:\\Users\\msree\\DistributedSystemsProjectF2023\\client\\MyFSharpApp.fsproj",
       "packagesPath": "C:\\Users\\msree\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\msree\\MyFSharpApp\\client\\obj\\",
+      "outputPath": "C:\\Users\\msree\\DistributedSystemsProjectF2023\\client\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\msree\\AppData\\Roaming\\NuGet\\NuGet.Config"

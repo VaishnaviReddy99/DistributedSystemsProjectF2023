@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\msree\\MyFSharpApp\\MyFSharpApp.fsproj": {}
+    "C:\\Users\\msree\\DistributedSystemsProjectF2023\\MyFSharpApp.fsproj": {}
   },
   "projects": {
-    "C:\\Users\\msree\\MyFSharpApp\\MyFSharpApp.fsproj": {
+    "C:\\Users\\msree\\DistributedSystemsProjectF2023\\MyFSharpApp.fsproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\msree\\MyFSharpApp\\MyFSharpApp.fsproj",
+        "projectUniqueName": "C:\\Users\\msree\\DistributedSystemsProjectF2023\\MyFSharpApp.fsproj",
         "projectName": "MyFSharpApp",
-        "projectPath": "C:\\Users\\msree\\MyFSharpApp\\MyFSharpApp.fsproj",
+        "projectPath": "C:\\Users\\msree\\DistributedSystemsProjectF2023\\MyFSharpApp.fsproj",
         "packagesPath": "C:\\Users\\msree\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\msree\\MyFSharpApp\\obj\\",
+        "outputPath": "C:\\Users\\msree\\DistributedSystemsProjectF2023\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\msree\\AppData\\Roaming\\NuGet\\NuGet.Config"

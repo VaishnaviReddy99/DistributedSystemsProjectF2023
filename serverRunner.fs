@@ -8,8 +8,7 @@ let serverPort = 12345
 
 // Function to handle communication with a client
 let handleClient (csocket: Socket) =
-    async {
-        try
+    try
         let clientEndPoint = csocket.RemoteEndPoint.ToString()
         printfn "Client connected: %s" clientEndPoint
         let byteArrayLength = 1024 // Specify the length of the byte array
@@ -84,35 +83,26 @@ let handleClient (csocket: Socket) =
             printfn "SocketException: %s" se.Message
         | :? ObjectDisposedException ->
             printfn "Client socket closed."
-    }
 
 // Main server function
-let async main () =
+let main () =
     let ipAddress = IPAddress.Parse("127.0.0.1")
     let endPoint = IPEndPoint(ipAddress, serverPort)
     let serverSocket = new Socket(SocketType.Stream, ProtocolType.Tcp)
     
     try
         serverSocket.Bind(endPoint)
-        serverSocket.Listen(4) // Listen for one client connection
+        serverSocket.Listen(1) // Listen for one client connection
 
         printfn "Server listening on port %d..." serverPort
 
-        let rec acceptClients () =
-            async {
-                while true do
-                    // Accept a client connection asynchronously
-                    let! clientSocket = Async.AwaitTask(serverSocket.AcceptAsync())
+        // Accept a client connection
+        let clientSocket = serverSocket.Accept()
+        handleClient clientSocket
 
-                    // Start a new asynchronous operation to handle the client
-                    Async.StartAsTask(handleClient clientSocket)
+        clientSocket.Close()
+        serverSocket.Close()
 
-            }
-        // Start accepting clients asynchronously
-        do! acceptClients()
-
-        // clientSocket.Close()
-        // serverSocket.Close()
     with
     | :? SocketException as se ->
         printfn "SocketException: %s" se.Message
@@ -126,4 +116,4 @@ let async main () =
         printfn "An unexpected exception occurred: %s" ex.Message
 
 // Call the main function
-Async.RunSynchronously (main ())
+main()
