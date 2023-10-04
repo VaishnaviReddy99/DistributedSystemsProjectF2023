@@ -1,116 +1,74 @@
-// open System
-// open System.Net
-// open System.Net.Sockets
-// open System.Text
-// open System.Threading
-
-// let serverIP = "127.0.0.1"
-// let serverPort = 12345
-
-// let sendThreadFunction (clientSocket: Socket) = 
-//     let rec loop () =
-//         printf "Enter your command for the server to perform action: "
-//         let message = Console.ReadLine()
-//         let messageBytes = Encoding.ASCII.GetBytes(message)
-//         clientSocket.Send(messageBytes)
-
-//         match message.ToLower() with
-//         | "bye" | "terminate" -> printfn "Exiting send loop."
-//         | _ -> loop()
-    
-//     loop()
-
-// let receiveThreadFunction (clientSocket: Socket) =
-//     let bufferLength = 1024
-//     let buffer = Array.zeroCreate<byte> bufferLength
-    
-//     let rec loop () =
-//         let bytesRead = clientSocket.Receive(buffer)
-//         let response = Encoding.ASCII.GetString(buffer, 0, bytesRead)
-//         printfn "Server response: %s" response
-        
-//         // Close the client socket if server sends a termination message
-//         if response.ToLower().Contains("terminate") then
-//             printfn "Exiting receive loop."
-//             clientSocket.Close()
-//         else
-//             loop()
-    
-//     loop()
-
-// let main () =
-//     try
-//         let serverEndPoint = IPEndPoint(IPAddress.Parse(serverIP), serverPort)
-//         let clientSocket = new Socket(SocketType.Stream, ProtocolType.Tcp)
-
-//         // Connect to the server
-//         clientSocket.Connect(serverEndPoint)
-//         printfn "Connected to the server at %s:%d" serverIP serverPort
-        
-//         // Start a thread to send messages
-//         let sendThread = Thread(ThreadStart(fun () -> sendThreadFunction clientSocket))
-//         sendThread.Start()
-        
-//         // Start a thread to receive messages
-//         let receiveThread = Thread(ThreadStart(fun () -> receiveThreadFunction clientSocket))
-//         receiveThread.Start()
-        
-//         // Wait for both threads to finish
-//         sendThread.Join()
-//         receiveThread.Join()
-//     with
-//     | :? SocketException as se -> printfn "SocketException: %s" se.Message
-//     | ex -> printfn "An unexpected exception occurred: %s" ex.Message
-
-// // Call the main function to run the client
-// main()
-
-
 open System
 open System.Net
 open System.Net.Sockets
 open System.Text
+open System.Threading
+
+let serverIP = IPAddress.Parse("127.0.0.1")
+let serverPort = 12345
+
+let clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
+clientSocket.Connect(IPEndPoint(serverIP, serverPort))
+
+let terminationLock = obj()  // An object to lock on
+let mutable shouldTerminate = false 
+
+let safeSetTerminate () = 
+    lock terminationLock (fun () -> shouldTerminate <- true)
+
+let safeGetTerminate () = 
+    lock terminationLock (fun () -> shouldTerminate)
+
+let sendLoop () =
+    let buffer = new System.Text.StringBuilder()
+    printf "Enter your command: "
+    while not (safeGetTerminate ()) do
+        if Console.KeyAvailable then
+            let key = Console.ReadKey(intercept=true) // Read the key but don't display it
+            if key.Key = ConsoleKey.Enter then
+                let message = buffer.ToString()
+                let messageBytes = Encoding.ASCII.GetBytes(message)
+                clientSocket.Send(messageBytes) |> ignore
+                buffer.Clear()
+
+                // Check if we should terminate
+                if message.ToLower() = "bye" || message.ToLower() = "terminate" then
+                    safeSetTerminate ()
+                    printfn "\nEnding send loop."
+            else
+                buffer.Append(key.KeyChar) |> ignore
+                Console.Write(key.KeyChar) // Display the character to the console
+
+        Thread.Sleep(100) // Sleep for a short duration before checking again
 
 
-let serverIP = "127.0.0.1"  // Replace with the IP address of your server
-let serverPort = 12345      // Replace with the port your server is listening on
+let receiveLoop () =
+    while not (safeGetTerminate ()) do
+        let buffer = Array.zeroCreate<byte> 1024
+        let bytesRead = clientSocket.Receive(buffer)
+        let message = Encoding.ASCII.GetString(buffer, 0, bytesRead)
+        printfn ""
+        printfn "Server Response : %s" message
+        printf "Enter your command :"
 
+        // Check if we should terminate
+        if message.ToLower() = "-5" then
+            safeSetTerminate ()
+            printfn "Recieved code -5. Terminating the Client"
 
-// ##############################################
-// Working code
+let main() =
+    printfn "Client starting..."
 
-let main () =
-    try
-        let serverEndPoint = IPEndPoint(IPAddress.Parse(serverIP), serverPort)
-        let clientSocket = new Socket(SocketType.Stream, ProtocolType.Tcp)
+    let sendThread = Thread(ThreadStart(sendLoop))
+    let receiveThread = Thread(ThreadStart(receiveLoop))
 
-        // Connect to the server
-        clientSocket.Connect(serverEndPoint)
-        printfn "Connected to the server at %s:%d" serverIP serverPort
-        let mutable command = ""
-        let bufferLength = 1024
-        let buffer = Array.create<byte> bufferLength 0uy
+    sendThread.Start()
+    receiveThread.Start()
 
-        let rec loop () =
-            printf "Enter your command for the server to perform : "
-            let message = Console.ReadLine()
-            let  messageBytes = Encoding.ASCII.GetBytes(message)
-            clientSocket.Send(messageBytes)
-            let bytesRead = clientSocket.Receive(buffer)
-            let response = Encoding.ASCII.GetString(buffer, 0, bytesRead)
-            printfn "Server response: %s" response
-            match response with
-            | "-5" -> printfn "Got Server Response as -5. Terminating the Client"
-            | _ -> loop()
-        
-        loop()
+    sendThread.Join()
+    receiveThread.Join()
 
-        clientSocket.Close()
-    with
-    | :? SocketException as se ->
-        printfn "SocketException: %s" se.Message
-    | ex ->
-        printfn "An unexpected exception occurred: %s" ex.Message
+    clientSocket.Close()
+    printfn "Client stopped."
 
-// Call the main function to run the client
 main()

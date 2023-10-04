@@ -3,6 +3,7 @@ open System.Net
 open System.Net.Sockets
 open System.Text
 open System.Threading
+open System.Collections.Concurrent
 
 // Define IP and port
 let ip = IPAddress.Parse("127.0.0.1")
@@ -24,9 +25,24 @@ let asyncPrint message = async {
     printfn "%s" message
 }
 
+// Thread-safe collection to hold all connected client sockets
+let connectedClients = ConcurrentBag<Socket>() 
+
+// Function to broadcast "terminate" message to all connected clients
+let broadcastTerminate () = 
+    for client in connectedClients do
+        try
+            let terminateMsg = "-5" // Error code for Terminate
+            
+            client.Send(Encoding.ASCII.GetBytes(terminateMsg)) |> ignore
+        with
+        | _ -> printfn "Error broadcasting terminate message to a client."
+    printfn "done"
+
 let handleClient (csocket: Socket) =
     async{
         try
+        connectedClients.Add(csocket)
         let clientEndPoint = csocket.RemoteEndPoint.ToString()
         let currentThreadId = Thread.CurrentThread.ManagedThreadId
         asyncPrint (sprintf "ThreadId#%d Client connected: %s" currentThreadId clientEndPoint)
@@ -53,6 +69,7 @@ let handleClient (csocket: Socket) =
                     printfn "ThreadId#%d Client saying bye" currentThreadId
                 elif substrings.[0].Equals("terminate",StringComparison.OrdinalIgnoreCase) then
                     safeSetTerminate ()
+                    broadcastTerminate ()
                     continueListening <- false
                     result <- -5
                     printfn "ThreadId#%d Received termination signal" currentThreadId
@@ -140,7 +157,6 @@ let startServer (ipAddress: IPAddress) (port: int) =
             printfn "Waiting for a connection..."
             let handler = listener.Accept()
             printfn "Client connected: %O" handler.RemoteEndPoint
-
             if not (safeGetTerminate ()) then
                 Thread(ThreadStart(fun _ -> handleClient handler |> ignore)) |> (fun t -> t.Start())
        
@@ -149,7 +165,6 @@ let startServer (ipAddress: IPAddress) (port: int) =
     | ex -> printfn "Exception: %s" (ex.Message)
     
     listener.Close()
-
 
 // Start the server
 let main() = 
