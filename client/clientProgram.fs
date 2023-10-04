@@ -1,3 +1,71 @@
+// open System
+// open System.Net
+// open System.Net.Sockets
+// open System.Text
+// open System.Threading
+
+// let serverIP = "127.0.0.1"
+// let serverPort = 12345
+
+// let sendThreadFunction (clientSocket: Socket) = 
+//     let rec loop () =
+//         printf "Enter your command for the server to perform action: "
+//         let message = Console.ReadLine()
+//         let messageBytes = Encoding.ASCII.GetBytes(message)
+//         clientSocket.Send(messageBytes)
+
+//         match message.ToLower() with
+//         | "bye" | "terminate" -> printfn "Exiting send loop."
+//         | _ -> loop()
+    
+//     loop()
+
+// let receiveThreadFunction (clientSocket: Socket) =
+//     let bufferLength = 1024
+//     let buffer = Array.zeroCreate<byte> bufferLength
+    
+//     let rec loop () =
+//         let bytesRead = clientSocket.Receive(buffer)
+//         let response = Encoding.ASCII.GetString(buffer, 0, bytesRead)
+//         printfn "Server response: %s" response
+        
+//         // Close the client socket if server sends a termination message
+//         if response.ToLower().Contains("terminate") then
+//             printfn "Exiting receive loop."
+//             clientSocket.Close()
+//         else
+//             loop()
+    
+//     loop()
+
+// let main () =
+//     try
+//         let serverEndPoint = IPEndPoint(IPAddress.Parse(serverIP), serverPort)
+//         let clientSocket = new Socket(SocketType.Stream, ProtocolType.Tcp)
+
+//         // Connect to the server
+//         clientSocket.Connect(serverEndPoint)
+//         printfn "Connected to the server at %s:%d" serverIP serverPort
+        
+//         // Start a thread to send messages
+//         let sendThread = Thread(ThreadStart(fun () -> sendThreadFunction clientSocket))
+//         sendThread.Start()
+        
+//         // Start a thread to receive messages
+//         let receiveThread = Thread(ThreadStart(fun () -> receiveThreadFunction clientSocket))
+//         receiveThread.Start()
+        
+//         // Wait for both threads to finish
+//         sendThread.Join()
+//         receiveThread.Join()
+//     with
+//     | :? SocketException as se -> printfn "SocketException: %s" se.Message
+//     | ex -> printfn "An unexpected exception occurred: %s" ex.Message
+
+// // Call the main function to run the client
+// main()
+
+
 open System
 open System.Net
 open System.Net.Sockets
@@ -6,6 +74,10 @@ open System.Text
 
 let serverIP = "127.0.0.1"  // Replace with the IP address of your server
 let serverPort = 12345      // Replace with the port your server is listening on
+
+
+// ##############################################
+// Working code
 
 let main () =
     try
@@ -27,71 +99,12 @@ let main () =
             let bytesRead = clientSocket.Receive(buffer)
             let response = Encoding.ASCII.GetString(buffer, 0, bytesRead)
             printfn "Server response: %s" response
-            command <- message
-            match command with
-            | "bye" | "terminate" -> printfn "Exiting loop."
+            match response with
+            | "-5" -> printfn "Got Server Response as -5. Terminating the Client"
             | _ -> loop()
         
         loop()
 
-
-
-
-
-            
-
-
-
-
-
-        
-
-        // Send a message to the server
-        // let mutable message = "Multiply 2 2"
-        // let mutable messageBytes = Encoding.ASCII.GetBytes(message)
-
-        // // Receive a response from the server
-        // let mutable bufferLength = 1024
-        // let mutable buffer = Array.create<byte> bufferLength 0uy
-        // let mutable bytesRead = clientSocket.Receive(buffer)
-        // let mutable response = Encoding.ASCII.GetString(buffer, 0, bytesRead)
-        // printfn "Server response: %s" response
-
-        // message <- "Add 45 15 30"
-        // messageBytes <- Encoding.ASCII.GetBytes(message)
-        // clientSocket.Send(messageBytes)
-        // bytesRead <- clientSocket.Receive(buffer)
-        // response <- Encoding.ASCII.GetString(buffer, 0, bytesRead)
-        // printfn "Server response: %s" response
-
-        // message <- "Add 45 15 "
-        // messageBytes <- Encoding.ASCII.GetBytes(message)
-        // clientSocket.Send(messageBytes)
-        // bytesRead <- clientSocket.Receive(buffer)
-        // response <- Encoding.ASCII.GetString(buffer, 0, bytesRead)
-        // printfn "Server response: %s" response
-
-        // message <- "Multiply 3 15 "
-        // messageBytes <- Encoding.ASCII.GetBytes(message)
-        // clientSocket.Send(messageBytes)
-        // bytesRead <- clientSocket.Receive(buffer)
-        // response <- Encoding.ASCII.GetString(buffer, 0, bytesRead)
-        // printfn "Server response: %s" response
-
-        // message <- "Terminate "
-        // messageBytes <- Encoding.ASCII.GetBytes(message)
-        // clientSocket.Send(messageBytes)
-        // bytesRead <- clientSocket.Receive(buffer)
-        // response <- Encoding.ASCII.GetString(buffer, 0, bytesRead)
-        // printfn "Server response for Bye: %s" response
-
-        // message <- "Multiply 3 15 "
-        // messageBytes <- Encoding.ASCII.GetBytes(message)
-        // clientSocket.Send(messageBytes)
-        // bytesRead <- clientSocket.Receive(buffer)
-        // response <- Encoding.ASCII.GetString(buffer, 0, bytesRead)
-        // printfn "Server response: %s" response
-        // // Close the client socket
         clientSocket.Close()
     with
     | :? SocketException as se ->

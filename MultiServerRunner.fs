@@ -29,18 +29,19 @@ let handleClient (csocket: Socket) =
         try
         let clientEndPoint = csocket.RemoteEndPoint.ToString()
         let currentThreadId = Thread.CurrentThread.ManagedThreadId
-        asyncPrint (sprintf "#%d Client connected: %s" currentThreadId clientEndPoint)
+        asyncPrint (sprintf "ThreadId#%d Client connected: %s" currentThreadId clientEndPoint)
         let byteArrayLength = 1024 // Specify the length of the byte array
         let buffer = Array.create<byte> byteArrayLength 0uy   
         let mutable continueListening = true
         while continueListening && not (safeGetTerminate ()) do
+            let termFlag = safeGetTerminate()
             let bytesRead = csocket.Receive(buffer)
             if bytesRead = 0 then
-                printfn "#%d Client disconnected: %s" currentThreadId clientEndPoint
+                printfn "ThreadId#%d Client disconnected: %s" currentThreadId clientEndPoint
                 continueListening <- false
             else
                 let message = Encoding.ASCII.GetString(buffer, 0, bytesRead)
-                printfn "#%d Received: %s" currentThreadId, message
+                printfn "ThreadId#%d Received: %s" currentThreadId, message
                 let separator = [| ' ' |] 
                 let substrings = message.Split(separator, StringSplitOptions.RemoveEmptyEntries)
                 let mutable result = 0
@@ -48,21 +49,23 @@ let handleClient (csocket: Socket) =
 
                 if substrings.[0].Equals("bye",StringComparison.OrdinalIgnoreCase) then
                     continueListening <- false
-                    printfn "#%d Client saying bye" currentThreadId
+                    result <- -5
+                    printfn "ThreadId#%d Client saying bye" currentThreadId
                 elif substrings.[0].Equals("terminate",StringComparison.OrdinalIgnoreCase) then
                     safeSetTerminate ()
                     continueListening <- false
-                    printfn "#%d Received termination signal" currentThreadId
+                    result <- -5
+                    printfn "ThreadId#%d Received termination signal" currentThreadId
 
                 elif not (substrings.[0].Equals("Add", StringComparison.OrdinalIgnoreCase) ||  substrings.[0].Equals("Substract", StringComparison.OrdinalIgnoreCase) ||    substrings.[0].Equals("Multiply", StringComparison.OrdinalIgnoreCase)) then
                     result <- -1
-                    printfn "#%d Incorrect operation provided ERR CODE: %d" currentThreadId result
+                    printfn "ThreadId#%d Incorrect operation provided ERR CODE: %d" currentThreadId result
                 elif substrings.Length > 4 then
                     result <- -3
-                    printfn "#%d More than 4 inputs have been passed ERR CODE: %d" currentThreadId result
+                    printfn "ThreadId#%d More than 4 inputs have been passed ERR CODE: %d" currentThreadId result
                 elif substrings.Length < 2 then
                     result <- -2
-                    printfn "#%d Less than 2 inputs have been passed ERR CODE: %d" currentThreadId result
+                    printfn "ThreadId#%d Less than 2 inputs have been passed ERR CODE: %d" currentThreadId result
                 elif substrings.[0].Equals("Add", StringComparison.OrdinalIgnoreCase) then
                     let numbersLen = substrings.Length - 1
                     for i = 0 to numbersLen - 1 do
@@ -72,12 +75,20 @@ let handleClient (csocket: Socket) =
                          with
                         | :? System.FormatException as e ->
                             result <- -2
-                            printfn "#%d Exception occurred during casting: %s" currentThreadId e.Message
+                            printfn "ThreadId#%d Exception occurred during casting: %s" currentThreadId e.Message
                             exceptionOccurred <- true       
-                    printfn "#%d result add: %d" currentThreadId result
+                    printfn "ThreadId#%d result add: %d" currentThreadId result
                 elif substrings.[0].Equals("Substract", StringComparison.OrdinalIgnoreCase) then
-                        // Code for "Subtract" case
-                        printfn  "#%d substracting" currentThreadId
+                    let numbersLen = substrings.Length - 1
+                    for i = 0 to numbersLen - 1 do
+                        if not exceptionOccurred then
+                        try
+                             result <-  int substrings.[i + 1] - result
+                         with
+                        | :? System.FormatException as e ->
+                            result <- -2
+                            printfn "ThreadId#%d Exception occurred during casting: %s" currentThreadId e.Message
+                            exceptionOccurred <- true 
                 elif substrings.[0].Equals("Multiply", StringComparison.OrdinalIgnoreCase) then
                     let mutable product = 1
                     let numbersLen = substrings.Length - 1
@@ -89,18 +100,24 @@ let handleClient (csocket: Socket) =
                             with
                             | :? System.FormatException as e ->
                                 product <- -2
-                                printfn "#%d Exception occurred during casting: %s" currentThreadId e.Message
+                                printfn "ThreadId#%d Exception occurred during casting: %s" currentThreadId e.Message
                                 exceptionOccurred <- true 
                     result <- product    
-                    printfn "#%d result: %d" currentThreadId result
+                    printfn "ThreadId#%d result: %d" currentThreadId result
                 else
                     result <- -1
-                    printfn "#%d Incorrect command given" currentThreadId
+                    printfn "ThreadId#%d Incorrect command given" currentThreadId
             
                 // Echo the message back to the client
-                let smsg = sprintf "Result: %d" result
+                let smsg = sprintf "%d" result
                 csocket.Send(Encoding.ASCII.GetBytes(smsg)) |> ignore
-        printfn "#%d Closing connection for client %s" currentThreadId clientEndPoint
+        
+        if safeGetTerminate() then
+            printf "Termination signal being sent to %d \n" currentThreadId
+            let smsg = sprintf "%d" -5
+            csocket.Send(Encoding.ASCII.GetBytes(smsg)) |> ignore
+        
+        printfn "ThreadId#%d Closing connection for client %s" currentThreadId clientEndPoint
 
         with
         | :? SocketException as se ->
