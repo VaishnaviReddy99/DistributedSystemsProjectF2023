@@ -6,7 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="serverRunner.fs" />
+    <!-- <Compile Include="serverRunner.fs" /> -->
+    <Compile Include="MultiServerRunner.fs" />
   </ItemGroup>
 
 </Project>
