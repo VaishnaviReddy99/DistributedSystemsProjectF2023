@@ -142,6 +142,7 @@ let handleClient (csocket: Socket) =
         | :? ObjectDisposedException ->
             printfn "Client socket closed."
     } |> Async.Start
+
 // Start server
 let startServer (ipAddress: IPAddress) (port: int) =
     // Create a TCP/IP socket
@@ -154,11 +155,12 @@ let startServer (ipAddress: IPAddress) (port: int) =
 
         printfn "Server is running on %O:%d" ipAddress port
         while not (safeGetTerminate ()) do
-            printfn "Waiting for a connection..."
-            let handler = listener.Accept()
-            printfn "Client connected: %O" handler.RemoteEndPoint
-            if not (safeGetTerminate ()) then
-                Thread(ThreadStart(fun _ -> handleClient handler |> ignore)) |> (fun t -> t.Start())
+            // printfn "Waiting for a connection..."
+            if listener.Poll(1000000, SelectMode.SelectRead) then
+                let handler = listener.Accept()
+                printfn "Client connected: %O" handler.RemoteEndPoint
+                if not (safeGetTerminate ()) then
+                    Thread(ThreadStart(fun _ -> handleClient handler |> ignore)) |> (fun t -> t.Start())
        
         printfn "Terminating Server"
     with 
